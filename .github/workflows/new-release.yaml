@@ -1,16 +1,58 @@
+# This workflow automatically creates a new release when a PR is merged to main branch.
+#
+# It performs the following steps:
+# 1. Checks if the version in pubspec.yaml differs from the latest git tag
+# 2. If version is updated, builds an APK file
+# 3. Creates a new release with the APK file
 name: Create Release with Executable
 
 on:
-  push:
-    tags:
-      - "v*"
+  pull_request:
+    types: [closed]
+    branches:
+      - main
 
 jobs:
-  release:
+  version-check:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      needsUpdate: ${{ steps.compare.outputs.needsUpdate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Needed to fetch all tags.
+          # See https://github.com/actions/checkout/issues/701#issuecomment-1133937950.
+          fetch-depth: 0
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep -m 1 'version:' pubspec.yaml | awk -F'[:]' '{print $2}' | tr -d "[:blank:]")
+          echo "version=$VERSION" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Get previous tag
+        id: previous_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          echo "version=${TAG#v}" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          if [ "${{ steps.version.outputs.version }}" != "${{ steps.previous_tag.outputs.version }}" ]; then
+            echo "needsUpdate=true" | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "needsUpdate=false" | tee -a "$GITHUB_OUTPUT"
+          fi
+
+  new-release:
+    runs-on: ubuntu-latest
+    needs: version-check
+    if: needs.version-check.outputs.needsUpdate == 'true'
     permissions:
       contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,8 +76,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} \
-            --title "${{ github.ref_name }}" \
+          VERSION=${{ needs.version-check.outputs.version }}
+          gh release create $VERSION \
+            --title "$VERSION" \
             --generate-notes \
-            --verify-tag \
             ./build/app/outputs/flutter-apk/app-release.apk
