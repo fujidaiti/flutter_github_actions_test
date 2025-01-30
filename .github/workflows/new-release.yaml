@@ -1,3 +1,4 @@
+# This workflow automatically creates a new release when a PR is merged to main branch.
 #
 # It performs the following steps:
 # 1. Checks if the version in pubspec.yaml differs from the latest git tag
