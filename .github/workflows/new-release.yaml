@@ -41,7 +41,7 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          RESULT=$(python script/compare_versions.py "${{ steps.version.outputs.version }}" "${{ steps.previous_tag.outputs.version }}")
+          RESULT=$(python ${{ github.workspace }}/script/compare_versions.py "${{ steps.version.outputs.version }}" "${{ steps.previous_tag.outputs.version }}")
           if [ "$RESULT" -eq 1 ]; then
             echo "needsUpdate=true" | tee -a "$GITHUB_OUTPUT"
           else
