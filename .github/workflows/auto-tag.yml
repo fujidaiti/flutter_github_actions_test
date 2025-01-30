@@ -35,10 +35,7 @@ jobs:
       - name: Compare versions
         id: compare
         run: |
-          echo "Previous Version : $PREVIOUS_VERSION"
-          echo "New Version : $NEW_VERSION"
-
-          if [ "$PREVIOUS_VERSION" != "$NEW_VERSION" ]; then
+          if [ "${{ steps.version.outputs.version }}" != "${{ steps.previous_tag.outputs.version }}" ]; then
             echo "needsUpdate=true" | tee -a "$GITHUB_OUTPUT"
           fi
 
