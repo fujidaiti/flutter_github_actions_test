@@ -15,29 +15,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Needed to fetch all tags.
+          # See https://github.com/actions/checkout/issues/701#issuecomment-1133937950.
+          fetch-depth: 0
 
       - name: Read version from pubspec.yaml
         id: version
         run: |
           VERSION=$(grep -m 1 'version:' pubspec.yaml | awk -F'[:]' '{print $2}' | tr -d "[:blank:]")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" | tee -a "$GITHUB_OUTPUT"
 
       - name: Get previous tag
         id: previous_tag
         run: |
           TAG=$(git describe --tags --abbrev=0)
-          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Compare versions
         id: compare
         run: |
-          PREVIOUS_VERSION="${{ steps.previous_tag.outputs.version }}"
-          NEW_VERSION="${{ steps.version.outputs.version }}"
           echo "Previous Version : $PREVIOUS_VERSION"
           echo "New Version : $NEW_VERSION"
 
           if [ "$PREVIOUS_VERSION" != "$NEW_VERSION" ]; then
-            echo "needsUpdate=true" >> "$GITHUB_OUTPUT"
+            echo "needsUpdate=true" | tee -a "$GITHUB_OUTPUT"
           fi
 
       - name: Push new tag
