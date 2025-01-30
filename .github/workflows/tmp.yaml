@@ -9,4 +9,4 @@ jobs:
       - name: Python version
         run: python --version
       - name: script test
-        run: python scripts/compare_versions.py 1.0.0+1 1.0.0
+        run: python script/compare_versions.py 1.0.0+1 1.0.0
