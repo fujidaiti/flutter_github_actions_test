@@ -1,0 +1,10 @@
+name: tmp workflow
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python version
+        run: python --version
