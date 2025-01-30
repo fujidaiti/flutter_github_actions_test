@@ -15,6 +15,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Needed to fetch all tags.
+          # See https://github.com/actions/checkout/issues/701#issuecomment-1133937950.
+          fetch-depth: 0
 
       - name: Read version from pubspec.yaml
         id: version
