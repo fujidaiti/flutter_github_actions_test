@@ -9,4 +9,4 @@ jobs:
       - name: Python version
         run: python --version
       - name: script test
-        run: python script/compare_versions.py 1.0.0+1 1.0.0
+        run: python ${{ github.workspace }}/script/compare_versions.py 1.0.0+1 1.0.0
