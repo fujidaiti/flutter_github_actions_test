@@ -1,0 +1,49 @@
+name: Auto Tag Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  auto-tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep -m 1 'version:' pubspec.yaml | awk -F'[:]' '{print $2}' | tr -d "[:blank:]")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Get previous tag
+        id: previous_tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          PREVIOUS_VERSION="${{ steps.previous_tag.outputs.version }}"
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          echo "Previous Version : $PREVIOUS_VERSION"
+          echo "New Version : $NEW_VERSION"
+
+          if [ "$PREVIOUS_VERSION" != "$NEW_VERSION" ]; then
+            echo "needsUpdate=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push new tag
+        if: steps.compare.outputs.needsUpdate == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
